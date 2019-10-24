@@ -2,17 +2,20 @@ namespace TFIO
 
 type Undo<'S,'E> = Undo of (unit -> Result<unit,'S * 'E>)
 type WrapUp = WrapUp of (unit -> unit)
-type Done<'S,'T,'E> = Done of 'S * 'T * Undo<'S,'E> * WrapUp | Undone
-type TransResult<'S,'T,'E> = ActDone of Done<'S,'T,'E> | Failure of 'E * 'S
-type Trans<'S,'T,'E> = M of ('S -> TransResult<'S,'T,'E>)
+type Outcome<'S,'T,'E> = Done of 'S * 'T * Undo<'S,'E> * WrapUp | Undone
+type TransResult<'S,'T,'E> = ActDone of Outcome<'S,'T,'E> | Failure of 'E * 'S
+type Trans<'S,'T,'E> =
+    | M of ('S -> Outcome<'S,'T,'E>)
+    | MF of ('S -> TransResult<'S,'T,'E>)
 
 module Trans =
     let private runM m s =
-        let (M f) = m
-        f s
+        match m with
+        | (M f) -> ActDone (f s)
+        | (MF f) -> f s
     let return' x =
         let returned s =
-            ActDone (Done (s, x, Undo (fun () -> Ok ()), WrapUp (fun () -> ())))
+            Done (s, x, Undo (fun () -> Ok ()), WrapUp (fun () -> ()))
         M returned
     let bind f x =
         let bound s =
@@ -30,7 +33,7 @@ module Trans =
                     | Ok () -> ActDone Undone
                     | Error (es, e) -> Failure (e, es)
             | ActDone Undone -> ActDone Undone
-        M bound
+        MF bound
     type Builder() =
         member _.Bind(x, f) = bind f x
         member _.Return(x) = return' x
