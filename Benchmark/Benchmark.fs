@@ -16,9 +16,6 @@ type ListBenchmark<'T>() =
     [<Benchmark>]
     member _.Insert() =
         List.insert xs ys |> ignore
-    [<Benchmark>]
-    member _.InsertV2() =
-        List.insertV2 xs ys |> ignore
 
 [<EntryPoint>]
 let main _ =

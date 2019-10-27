@@ -25,17 +25,24 @@ let main _ =
             a s
 
     let justOneUndoneWillRollbackOrFailProperty acs s x i =
-        (not (List.isEmpty acs) && i >= 0) ==> (
-            let actionUndo = Action (fun _ -> Undone)
-            let res =
-                List.insert acs [(i, actionUndo)]
-                |> List.map (fun t -> (fun _ -> M t))
-                |> List.fold (fun s' t' -> Trans.bind t' s') (Trans.return' x)
-                |> fun m -> Trans.run m s
-            match res with
-            | RolledBack | Failed _ -> true
-            | _ -> false
-            )
+        let res =
+            List.insert acs [(i, Action (fun _ -> Undone))]
+            |> List.map (fun t -> (fun _ -> M t))
+            |> List.fold (fun s' t' -> Trans.bind t' s') (Trans.return' x)
+            |> fun m -> Trans.run m s
+        match res with
+        | RolledBack | Failed _ -> true
+        | _ -> false
+
+    let justOneFailedUndoGivesFailedProperty s1 t1 e1 w1 acs2 i2 s x =
+        let res =
+            (Action (fun _ -> Done (s1, t1, Undo (fun () -> Error e1), w1)))::(List.insert acs2 [(i2, Action (fun _ -> Undone))])
+            |> List.map (fun t -> (fun _ -> M t))
+            |> List.fold (fun s' t' -> Trans.bind t' s') (Trans.return' x)
+            |> fun m -> Trans.run m s
+        match res with
+        | Failed _ -> true
+        | _ -> false
 
     let config = { Config.Quick with EndSize = 100; MaxTest = 250; Config.QuietOnSuccess = true; }
 
@@ -45,5 +52,6 @@ let main _ =
     Check.One(config, successfullSucceedProperty)
     Check.One(config, undoneWillRollbackProperty)
     Check.One({ config with EndSize = 10; }, justOneUndoneWillRollbackOrFailProperty)
+    Check.One({ config with EndSize = 10; }, justOneFailedUndoGivesFailedProperty)
     printfn "Done"
     0 // return an integer exit code
