@@ -7,15 +7,17 @@ type WrapUp = WrapUp of (unit -> unit)
 type ActionResult<'S,'T,'E> = Done of 'S * 'T * Undo<'S,'E> * WrapUp | Undone
 type TransState<'S,'T,'E> = ActDone of ActionResult<'S,'T,'E> | Failure of 'S * 'E
 type TransResult<'S,'T,'E> = Committed of 'S * 'T | RolledBack | Failed of 'S * 'E
+type Action<'S,'T,'E> = Action of ('S -> ActionResult<'S,'T,'E>)
+type TransExec<'S,'T,'E> = TransExec of ('S -> TransState<'S,'T,'E>)
 type Trans<'S,'T,'E> =
-    | M of ('S -> ActionResult<'S,'T,'E>)
-    | MF of ('S -> TransState<'S,'T,'E>)
+    | M of Action<'S,'T,'E>
+    | MF of TransExec<'S,'T,'E>
 
 module Trans =
     let private runM m s =
         match m with
-        | (M f) -> ActDone (f s)
-        | (MF f) -> f s
+        | (M (Action f)) -> ActDone (f s)
+        | (MF (TransExec f)) -> f s
     let private fullInnerUndo u s =
         match u with
         | Undo f -> f >> Result.mapError (fun e -> (s, e))
@@ -23,7 +25,7 @@ module Trans =
     let return' x =
         let returned s =
             Done (s, x, Undo (fun () -> Ok ()), WrapUp (fun () -> ()))
-        M returned
+        M (Action returned)
     let bind f x =
         let bound s =
             match runM x s with
@@ -40,7 +42,7 @@ module Trans =
                     | Ok () -> ActDone Undone
                     | Error (es, e) -> Failure (es, e)
             | ActDone Undone -> ActDone Undone
-        MF bound
+        MF (TransExec bound)
     let run m s =
         match runM m s with
         | ActDone (Done (s', t', _, w')) ->
