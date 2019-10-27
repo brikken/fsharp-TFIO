@@ -3,6 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="List.fs" />
     <Compile Include="Transaction.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>

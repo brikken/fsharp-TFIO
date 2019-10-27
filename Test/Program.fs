@@ -25,22 +25,17 @@ let main _ =
             a s
 
     let justOneUndoneWillRollbackOrFailProperty acs s x i =
-        (not (List.isEmpty acs) && i >= 0) ==> (lazy
-            (
-                let actionUndo = Action (fun _ -> Undone)
-                let l = List.length acs
-                let i' = i % l
-                let acs' = (List.take i' acs) @ [actionUndo] @ (List.skip i' acs |> List.take (l - i'))
-                let res =
-                    acs'
-                    |> List.map (fun t -> (fun _ -> M t))
-                    |> List.fold (fun s' t' -> Trans.bind t' s') (Trans.return' x)
-                    |> fun m -> Trans.run m s
-                match res with
-                | RolledBack | Failed _ -> true
-                | _ -> false
+        (not (List.isEmpty acs) && i >= 0) ==> (
+            let actionUndo = Action (fun _ -> Undone)
+            let res =
+                List.insert acs [(i, actionUndo)]
+                |> List.map (fun t -> (fun _ -> M t))
+                |> List.fold (fun s' t' -> Trans.bind t' s') (Trans.return' x)
+                |> fun m -> Trans.run m s
+            match res with
+            | RolledBack | Failed _ -> true
+            | _ -> false
             )
-        )
 
     let config = { Config.Quick with EndSize = 100; MaxTest = 250; Config.QuietOnSuccess = true; }
 
