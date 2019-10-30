@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="List.fs" />
     <Compile Include="Transaction.fs" />
+    <Compile Include="IO.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 </Project>

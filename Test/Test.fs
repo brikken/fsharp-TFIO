@@ -1,7 +1,6 @@
-﻿// Learn more about F# at http://fsharp.org
-
-open FsCheck
-open TFIO
+﻿open FsCheck
+open TFIO.Collections
+open TFIO.Transaction
 
 [<EntryPoint>]
 let main _ =

@@ -1,10 +1,11 @@
-namespace TFIO
+namespace TFIO.Collections
 
 [<RequireQualifiedAccess>]
 module List =
     /// <summary>Inserts elements <c>ys</c> at the indices given in first tuple element</summary>
     /// <param name="xs">List to insert elements into</param>
     /// <param name="ys">List of tuples. First tuple element indicates target position in <c>xs</c>. Position can be any integer, since the actual position <c>p</c> is <c>(abs p) % (List.length xs)</c></param>
+    [<CompiledName("Insert")>]
     let insert xs ys =
         match (xs, ys) with
         | ([], _) -> List.map snd ys
